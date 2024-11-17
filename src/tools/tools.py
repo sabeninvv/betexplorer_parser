@@ -6,6 +6,29 @@ from logging import Logger
 import base64
 
 
+def text_preprocessing(text):
+    patterns = (",", "|", "-")
+    for pattern in patterns:
+        text = text.replace(f"{pattern} ", f"{pattern}").replace(f" {pattern}", f"{pattern}").replace(f" {pattern} ", f"{pattern}")
+    return text
+
+
+def parse_bid_range(text):
+    min_, max_ = text[3:].split("-")
+    return {'min': float(min_), 'max': float(max_)}
+
+
+def parse_bid_ranges(bid_ranges: list) -> dict:
+    t1_inx, t2_inx = (0, 1) if "t1" in bid_ranges[0] else (1, 0)
+    if len(bid_ranges) == 1:
+        bid_range = parse_bid_range(bid_ranges[0])
+        team_1_bid_range, team_2_bid_range = (None, bid_range) if t1_inx == 1 else (bid_range, None)
+    else:
+        team_1_bid_range = parse_bid_range(bid_ranges[t1_inx])
+        team_2_bid_range = parse_bid_range(bid_ranges[t2_inx])
+    return {'team_1_bid_range': team_1_bid_range, 'team_2_bid_range': team_2_bid_range}
+
+
 def encode_by_b64(row: str) -> str:
     return base64.urlsafe_b64encode(row.encode("UTF-8")).decode("UTF-8")
 

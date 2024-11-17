@@ -1,38 +1,29 @@
 from src import *
 
 
-if os_name == 'nt':
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
 @external_sentinel
 def run_simplenote_parser(**kwargs):
-    logger = kwargs['logger']
-    SimplenoteParser().filling_request()
+    SimplenoteParser(**kwargs).filling_request()
 
 
 @external_sentinel
 def run_handler(**kwargs):
-    logger = kwargs['logger']
-    while True:
-        try:
-            be_parser = BetExplorerParser()
-            be_parser.cold_start()
-            be_parser.handler()
-        except Exception as ex:
-            logger.error(f"[run_handler] {ex}")
+    be_parser = BetExplorerParser(aiohttp_session=None, telegram_cli=None, **kwargs)
+    be_parser.cold_start()
+    be_parser.handler()
 
 
 @external_sentinel
 def run_betexplorer_parser(**kwargs):
-    logger = kwargs['logger']
-    while True:
-        try:
-            asyncio.run(
-                BetExplorerParser().run_event()
-            )
-        except Exception as ex:
-            logger.error(f"[run_betexplorer_parser] {ex}")
+    with asyncio.Runner() as runner:
+        aiohttp_session = create_aiohttp_session(loop=runner.get_loop())
+        telegram_cli = TelegramClient(session=aiohttp_session)
+        be_parser = BetExplorerParser(
+            aiohttp_session=aiohttp_session,
+            telegram_cli=telegram_cli,
+            **kwargs)
+
+        runner.run(be_parser.ride_round_robin())
 
 
 if __name__ == "__main__":
@@ -43,7 +34,6 @@ if __name__ == "__main__":
         'conn_read': conn_read,
         'conn_write': conn_write,
     }
-    logger = container['logger']
 
     processes = [
         Process(target=run_simplenote_parser, kwargs=container),
