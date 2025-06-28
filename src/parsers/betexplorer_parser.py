@@ -187,12 +187,12 @@ class BetExplorerParser:
         bookmaker_meta = meta[bookmaker]
         if not bookmaker_meta:
             return False
-
         if match.team_1_bid_range is not None:
-            cond_1 = match.team_1_bid_range['min'] < bookmaker_meta[1] < match.team_1_bid_range['max']
+            cond_1 = match.team_1_bid_range['min'] < bookmaker_meta.get(1, float('inf')) < match.team_1_bid_range['max']
         if match.team_2_bid_range is not None:
-            cond_2 = match.team_2_bid_range['min'] < bookmaker_meta[2] < match.team_2_bid_range['max']
+            cond_2 = match.team_2_bid_range['min'] < bookmaker_meta.get(2, float('inf')) < match.team_2_bid_range['max']
         return any([cond_1, cond_2])
+
 
     def get_match_hash(self) -> Optional[bytes]:
         return self._redis_conn.spop(INWAITING_MATCHES)
